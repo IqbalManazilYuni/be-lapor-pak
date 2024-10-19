@@ -1,0 +1,28 @@
+###
+POST http://localhost:5000/api/jenispengaduan
+Content-Type: application/json
+
+{
+  "jenisPengaduan":"Penertiban Parkir Liar"
+}
+
+###
+get http://localhost:5000/api/jenispengaduan
+
+###
+POST http://localhost:5000/api/pengguna/register
+Content-Type: application/json
+
+{
+    "name":"Muhammad Arif",
+    "email":"arif@gmail.com",
+    "password":"RofiSokSuci1234"
+}
+
+###
+POST http://localhost:5000/api/kabupatenkota
+Content-Type: application/json
+
+{
+  "kabupatenkota":"Kota Padang"
+}
