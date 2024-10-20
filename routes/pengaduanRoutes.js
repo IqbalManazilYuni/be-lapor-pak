@@ -2,6 +2,8 @@ import express from "express";
 import Pengaduan from "../models/pengaduan.js";
 import multer from "multer";
 import path from "path";
+import moment from "moment";
+import "moment/locale/id.js";
 
 const router = express.Router();
 
@@ -107,7 +109,8 @@ router.put("/petugas", async (req, res) => {
   const { _id, status, petugas } = req.body;
   try {
     const updatedPasswordPetugas = await Pengaduan.findByIdAndUpdate(_id, {
-      status, petugas
+      status,
+      petugas,
     });
 
     if (!updatedPasswordPetugas) {
@@ -127,6 +130,89 @@ router.put("/petugas", async (req, res) => {
       code: 500,
       status: "error",
       message: error.message,
+    });
+  }
+});
+
+router.delete("/hapus-pengaduan/:id", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deletedkabupatenKota = await Pengaduan.findByIdAndDelete(id);
+    if (!deletedkabupatenKota) {
+      return res.status(404).json({
+        code: 404,
+        status: "error",
+        message: "Pengaduan tidak ditemukan",
+      });
+    }
+    return res.status(200).json({
+      code: 200,
+      status: "success",
+      message: "Pengaduan berhasil Di Hapus",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: 500,
+      status: "error",
+      message: error.message,
+    });
+  }
+});
+
+router.get("/summary", async (req, res) => {
+  try {
+    const pengaduanList = await Pengaduan.find();
+
+    // Membuat objek untuk menyimpan summary berdasarkan bulan, tahun, dan pelapor
+    const summary = {};
+
+    // Memproses setiap pengaduan
+    pengaduanList.forEach((pengaduan) => {
+      const tanggalPengaduan = new Date(pengaduan.createdAt);
+
+      // Ambil bulan dan tahun dari pengaduan
+      const bulan = moment(tanggalPengaduan).format("MMMM");
+      const tahun = moment(tanggalPengaduan).format("YYYY");
+      const bulanTahun = `${bulan} ${tahun}`;
+
+      // Jika bulan dan tahun belum ada di summary, tambahkan
+      if (!summary[bulanTahun]) {
+        summary[bulanTahun] = {};
+      }
+
+      // Jika pelapor belum ada di bulanTahun, tambahkan
+      if (!summary[bulanTahun][pengaduan.nama_pelapor]) {
+        summary[bulanTahun][pengaduan.nama_pelapor] = 0;
+      }
+
+      // Tambahkan jumlah laporan untuk pelapor tersebut
+      summary[bulanTahun][pengaduan.nama_pelapor] += 1;
+    });
+
+    // Menyiapkan hasil akhir dalam bentuk array
+    const summaryResult = Object.keys(summary).map((bulanTahun) => {
+      return {
+        bulanTahun,
+        pelapor: Object.keys(summary[bulanTahun]).map((namaPelapor) => ({
+          namaPelapor,
+          jumlahLaporan: summary[bulanTahun][namaPelapor],
+        })),
+      };
+    });
+
+    // Mengembalikan hasil summary
+    res.status(200).json({
+      code: 200,
+      status: "success",
+      message: "Summary pengaduan berhasil diambil",
+      payload: summaryResult,
+    });
+  } catch (error) {
+    res.status(500).json({
+      code: 500,
+      message: "Terjadi kesalahan server",
+      status: "error",
+      error: error.message,
     });
   }
 });
