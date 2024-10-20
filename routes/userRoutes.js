@@ -9,7 +9,9 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const users = await Pengguna.find().select("-password");
+    const users = await Pengguna.find()
+      .select("-password")
+      .sort({ createdAt: -1 }); // Mengurutkan berdasarkan createdAt yang terbaru
     return res
       .status(200)
       .json({ code: 200, status: "success", payload: users });
@@ -94,7 +96,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.put("/edit-petugas", async (req, res) => {
+router.put("/edit-pengguna", async (req, res) => {
   const { _id, name, username, nomor_hp, addres, role } = req.body;
   try {
     const updatedPasswordPetugas = await Pengguna.findByIdAndUpdate(_id, {
@@ -108,13 +110,13 @@ router.put("/edit-petugas", async (req, res) => {
       return res.status(404).json({
         code: 404,
         status: "error",
-        message: "Petugas Tidak Ditemukan",
+        message: "Pengguna Tidak Ditemukan",
       });
     }
     return res.status(200).json({
       code: 200,
       status: "success",
-      message: "Petugas berhasil diperbarui",
+      message: "Pengguna berhasil diperbarui",
     });
   } catch (error) {
     return res.status(500).json({
@@ -125,7 +127,7 @@ router.put("/edit-petugas", async (req, res) => {
   }
 });
 
-router.put("/edit-password-petugas", async (req, res) => {
+router.put("/edit-password", async (req, res) => {
   const { _id, password } = req.body;
   try {
     const updatedPasswordPetugas = await Pengguna.findByIdAndUpdate(_id, {
@@ -136,13 +138,13 @@ router.put("/edit-password-petugas", async (req, res) => {
       return res.status(404).json({
         code: 404,
         status: "error",
-        message: "Petugas Tidak Ditemukan",
+        message: "Pengguna Tidak Ditemukan",
       });
     }
     return res.status(200).json({
       code: 200,
       status: "success",
-      message: "Password Petugas berhasil diperbarui",
+      message: "Password Pengguna berhasil diperbarui",
     });
   } catch (error) {
     return res.status(500).json({
@@ -153,7 +155,7 @@ router.put("/edit-password-petugas", async (req, res) => {
   }
 });
 
-router.delete("/delete-petugas/:id", async (req, res) => {
+router.delete("/delete-pengguna/:id", async (req, res) => {
   const { id } = req.params;
   try {
     const deletedkabupatenKota = await Pengguna.findByIdAndDelete(id);
@@ -161,13 +163,13 @@ router.delete("/delete-petugas/:id", async (req, res) => {
       return res.status(404).json({
         code: 404,
         status: "error",
-        message: "Petugas tidak ditemukan",
+        message: "Pengguna tidak ditemukan",
       });
     }
     return res.status(200).json({
       code: 200,
       status: "success",
-      message: "Petugas berhasil diHapus",
+      message: "Pengguna berhasil Di Hapus",
     });
   } catch (error) {
     return res.status(500).json({

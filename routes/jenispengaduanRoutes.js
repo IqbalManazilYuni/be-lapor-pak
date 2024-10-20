@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.get("/", async (req, res) => {
   try {
-    const jenispengaduan = await JenisPengaduan.find();
+    const jenispengaduan = await JenisPengaduan.find().sort({ createdAt: -1 });;
     return res
       .status(200)
       .json({ code: 200, status: "success", payload: jenispengaduan });
