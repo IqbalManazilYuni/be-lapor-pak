@@ -162,45 +162,35 @@ router.delete("/hapus-pengaduan/:id", async (req, res) => {
 router.get("/summary", async (req, res) => {
   try {
     const pengaduanList = await Pengaduan.find();
-
-    // Membuat objek untuk menyimpan summary berdasarkan bulan, tahun, dan pelapor
     const summary = {};
 
-    // Memproses setiap pengaduan
     pengaduanList.forEach((pengaduan) => {
       const tanggalPengaduan = new Date(pengaduan.createdAt);
-
-      // Ambil bulan dan tahun dari pengaduan
       const bulan = moment(tanggalPengaduan).format("MMMM");
       const tahun = moment(tanggalPengaduan).format("YYYY");
-      const bulanTahun = `${bulan} ${tahun}`;
-
-      // Jika bulan dan tahun belum ada di summary, tambahkan
-      if (!summary[bulanTahun]) {
-        summary[bulanTahun] = {};
+      if (!summary[tahun]) {
+        summary[tahun] = {};
       }
-
-      // Jika pelapor belum ada di bulanTahun, tambahkan
-      if (!summary[bulanTahun][pengaduan.nama_pelapor]) {
-        summary[bulanTahun][pengaduan.nama_pelapor] = 0;
+      if (!summary[tahun][bulan]) {
+        summary[tahun][bulan] = {};
       }
-
-      // Tambahkan jumlah laporan untuk pelapor tersebut
-      summary[bulanTahun][pengaduan.nama_pelapor] += 1;
+      if (!summary[tahun][bulan][pengaduan.nama_pelapor]) {
+        summary[tahun][bulan][pengaduan.nama_pelapor] = 0;
+      }
+      summary[tahun][bulan][pengaduan.nama_pelapor] += 1;
     });
-
-    // Menyiapkan hasil akhir dalam bentuk array
-    const summaryResult = Object.keys(summary).map((bulanTahun) => {
+    const summaryResult = Object.keys(summary).map((tahun) => {
       return {
-        bulanTahun,
-        pelapor: Object.keys(summary[bulanTahun]).map((namaPelapor) => ({
-          namaPelapor,
-          jumlahLaporan: summary[bulanTahun][namaPelapor],
+        tahun,
+        bulan: Object.keys(summary[tahun]).map((bulan) => ({
+          bulan,
+          pelapor: Object.keys(summary[tahun][bulan]).map((namaPelapor) => ({
+            namaPelapor,
+            jumlahLaporan: summary[tahun][bulan][namaPelapor],
+          })),
         })),
       };
     });
-
-    // Mengembalikan hasil summary
     res.status(200).json({
       code: 200,
       status: "success",

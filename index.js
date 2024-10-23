@@ -7,7 +7,7 @@ import userRoutes from "./routes/userRoutes.js";
 import jenispengaduanRoutes from "./routes/jenispengaduanRoutes.js";
 import kabupatenkotaRoutes from "./routes/kabupatenkotaRoutes.js";
 import pengaduanRoutes from "./routes/pengaduanRoutes.js";
-
+import sertifikatRoutes from "./routes/sertifikatRoutes.js";
 // Load environment variables
 dotenv.config();
 
@@ -30,13 +30,22 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Melayani file statis dari folder 'public/foto_pengaduan'
-app.use("/public/foto_pengaduan", express.static(path.join(path.resolve(), "public", "foto_pengaduan")));
+app.use(
+  "/public/foto_pengaduan",
+  express.static(path.join(path.resolve(), "public", "foto_pengaduan"))
+);
+
+app.use(
+  "/public/file_sertifikat",
+  express.static(path.join(path.resolve(), "public", "file_sertifikat"))
+);
 
 // Routes
 app.use("/api/pengguna", userRoutes);
 app.use("/api/jenispengaduan", jenispengaduanRoutes);
 app.use("/api/kabupatenkota", kabupatenkotaRoutes);
 app.use("/api/pengaduan", pengaduanRoutes);
+app.use("/api/sertifikat", sertifikatRoutes);
 
 // Jalankan server
 const PORT = process.env.PORT || 5000;

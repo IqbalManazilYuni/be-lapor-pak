@@ -4,6 +4,7 @@ import generateToken from "../utils/generateToken.js";
 import { protect } from "../middleware/authMiddleware.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import Pengaduan from "../models/pengaduan.js";
 
 const router = express.Router();
 
@@ -99,6 +100,7 @@ router.post("/register", async (req, res) => {
 router.put("/edit-pengguna", async (req, res) => {
   const { _id, name, username, nomor_hp, addres, role } = req.body;
   try {
+    const namaPetugas = await Pengguna.findById(_id);
     const updatedPasswordPetugas = await Pengguna.findByIdAndUpdate(_id, {
       name,
       username,
@@ -113,6 +115,16 @@ router.put("/edit-pengguna", async (req, res) => {
         message: "Pengguna Tidak Ditemukan",
       });
     }
+    const updatePengaduanPetugas = await Pengaduan.updateMany(
+      { petugas: namaPetugas.username },
+      { $set: { petugas: username } }
+    );
+
+    const updatePengaduanPelapor = await Pengaduan.updateMany(
+      { nama_pelapor: namaPetugas.username },
+      { $set: { nama_pelapor: username } }
+    );
+    
     return res.status(200).json({
       code: 200,
       status: "success",
