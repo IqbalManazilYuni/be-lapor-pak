@@ -29,6 +29,10 @@ const penggunaSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    uri_profile: {
+      type: String,
+      required: false,
+    },
     token: {
       type: String,
       required: false,

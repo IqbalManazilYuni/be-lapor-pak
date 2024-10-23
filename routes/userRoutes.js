@@ -32,6 +32,13 @@ router.post("/login", async (req, res) => {
         message: "Pengguna tidak ditemukan.",
       });
     }
+    if (akunpengguna.role !== "masyarakat") {
+      return res.status(404).json({
+        code: 404,
+        status: "error",
+        message: "Pengguna tidak ada akses",
+      });
+    }
     const isPasswordValid = await bcrypt.compare(
       password,
       akunpengguna.password
@@ -59,6 +66,65 @@ router.post("/login", async (req, res) => {
         nomor_hp: akunpengguna.nomor_hp,
         addres: akunpengguna.addres,
         role: akunpengguna.role,
+        uri_profle: `${req.protocol}://${req.get("host")}/${
+          akunpengguna.uri_profile
+        }`,
+      },
+      token,
+    });
+  } catch (error) {
+    res.status(500).json({ code: 500, status: "error", message: error });
+  }
+});
+
+router.post("/login/web", async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const akunpengguna = await Pengguna.findOne({ username });
+    if (!akunpengguna) {
+      return res.status(404).json({
+        code: 404,
+        status: "error",
+        message: "Pengguna tidak ditemukan.",
+      });
+    }
+    if (akunpengguna.role === "masyarakat") {
+      return res.status(404).json({
+        code: 404,
+        status: "error",
+        message: "Pengguna tidak ada akses",
+      });
+    }
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      akunpengguna.password
+    );
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        code: 401,
+        status: "error",
+        message: "Password salah.",
+      });
+    }
+    const token = jwt.sign(
+      { id: akunpengguna._id, role: akunpengguna.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
+    );
+    res.status(200).json({
+      code: 200,
+      status: "success",
+      message: "Login berhasil.",
+      pengguna: {
+        _id: akunpengguna._id,
+        username: akunpengguna.username,
+        name: akunpengguna.name,
+        nomor_hp: akunpengguna.nomor_hp,
+        addres: akunpengguna.addres,
+        role: akunpengguna.role,
+        uri_profle: `${req.protocol}://${req.get("host")}/${
+          akunpengguna.uri_profile
+        }`,
       },
       token,
     });
@@ -124,7 +190,7 @@ router.put("/edit-pengguna", async (req, res) => {
       { nama_pelapor: namaPetugas.username },
       { $set: { nama_pelapor: username } }
     );
-    
+
     return res.status(200).json({
       code: 200,
       status: "success",

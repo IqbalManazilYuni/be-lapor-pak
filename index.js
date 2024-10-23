@@ -40,6 +40,11 @@ app.use(
   express.static(path.join(path.resolve(), "public", "file_sertifikat"))
 );
 
+app.use(
+  "/public/foto_profile",
+  express.static(path.join(path.resolve(), "public", "foto_profile"))
+);
+
 // Routes
 app.use("/api/pengguna", userRoutes);
 app.use("/api/jenispengaduan", jenispengaduanRoutes);
