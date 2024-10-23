@@ -4,7 +4,7 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+router.get("/", protect, async (req, res) => {
   try {
     const jenispengaduan = await JenisPengaduan.find().sort({ createdAt: -1 });;
     return res
@@ -17,7 +17,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", protect, async (req, res) => {
   const jenispengaduan = new JenisPengaduan({
     jenisPengaduan: req.body.jenisPengaduan,
   });
@@ -36,7 +36,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.put("/", async (req, res) => {
+router.put("/", protect, async (req, res) => {
   const { _id, jenisPengaduan } = req.body;
   console.log(jenisPengaduan);
   
@@ -65,7 +65,7 @@ router.put("/", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", protect, async (req, res) => {
   const { id } = req.params;
   console.log(id);
   try {

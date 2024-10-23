@@ -1,9 +1,10 @@
 import express from "express";
 import KabupatenKota from "../models/KabupatenKota.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+router.get("/", protect, async (req, res) => {
   try {
     const kabupatenKota = await KabupatenKota.find().sort({ createdAt: -1 });;
     return res
@@ -16,7 +17,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.post("/", async (req, res) => {
+router.post("/", protect, async (req, res) => {
   const kabupatenKota = new KabupatenKota({
     kabupatenkota: req.body.kabupatenkota,
   });
@@ -35,7 +36,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.put("/", async (req, res) => {
+router.put("/", protect, async (req, res) => {
   const { _id, kabupatenkota } = req.body;
   try {
     const updatedkabupatenKota = await KabupatenKota.findByIdAndUpdate(_id, {
@@ -62,7 +63,7 @@ router.put("/", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", protect, async (req, res) => {
   const { id } = req.params;
   console.log(id);
   try {

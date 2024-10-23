@@ -14,9 +14,12 @@ POST http://localhost:5000/api/pengguna/register
 Content-Type: application/json
 
 {
-    "name":"Muhammad Arif",
-    "email":"arif@gmail.com",
-    "password":"RofiSokSuci1234"
+    "name":"Iqbal Manazil Yuni",
+    "username":"Accismus",
+    "password":"admin12345",
+    "nomor_hp":"081234324433",
+    "role":"super admin",
+    "addres":"Jln Moh.Hatta No 1 Pasar Ambacang"
 }
 
 ###

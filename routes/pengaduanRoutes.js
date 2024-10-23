@@ -4,6 +4,7 @@ import multer from "multer";
 import path from "path";
 import moment from "moment";
 import "moment/locale/id.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ const upload = multer({
 });
 
 // Route untuk menambahkan pengaduan
-router.post("/", upload.single("photo"), async (req, res) => {
+router.post("/", protect, upload.single("photo"), async (req, res) => {
   try {
     const {
       judul_pengaduan,
@@ -70,7 +71,7 @@ router.post("/", upload.single("photo"), async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get("/", protect, async (req, res) => {
   try {
     const pengaduanList = await Pengaduan.find();
     res.status(200).json({
@@ -105,7 +106,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-router.put("/petugas", async (req, res) => {
+router.put("/petugas",protect, async (req, res) => {
   const { _id, status, petugas } = req.body;
   try {
     const updatedPasswordPetugas = await Pengaduan.findByIdAndUpdate(_id, {
@@ -134,7 +135,7 @@ router.put("/petugas", async (req, res) => {
   }
 });
 
-router.delete("/hapus-pengaduan/:id", async (req, res) => {
+router.delete("/hapus-pengaduan/:id",protect, async (req, res) => {
   const { id } = req.params;
   try {
     const deletedkabupatenKota = await Pengaduan.findByIdAndDelete(id);
@@ -159,7 +160,7 @@ router.delete("/hapus-pengaduan/:id", async (req, res) => {
   }
 });
 
-router.get("/summary", async (req, res) => {
+router.get("/summary",protect, async (req, res) => {
   try {
     const pengaduanList = await Pengaduan.find();
     const summary = {};

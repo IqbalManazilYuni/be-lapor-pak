@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import Sertifikat from "../models/Sertifikat.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ const upload = multer({
   },
 });
 
-router.post("/", upload.single("file"), async (req, res) => {
+router.post("/", protect, upload.single("file"), async (req, res) => {
   try {
     const { namaPelapor, tahun, bulan, jumlahLaporan } = req.body;
 
@@ -82,7 +83,7 @@ router.post("/", upload.single("file"), async (req, res) => {
   }
 });
 
-router.get("/", async (req, res) => {
+router.get("/", protect, async (req, res) => {
   try {
     const sertifikatList = await Sertifikat.find();
     res.status(200).json({

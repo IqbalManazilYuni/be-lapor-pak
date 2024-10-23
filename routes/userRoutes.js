@@ -5,10 +5,14 @@ import { protect } from "../middleware/authMiddleware.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import Pengaduan from "../models/pengaduan.js";
+import CryptoJS from "crypto-js";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+router.get("/", protect, async (req, res) => {
   try {
     const users = await Pengguna.find()
       .select("-password")
@@ -77,6 +81,15 @@ router.post("/login", async (req, res) => {
   }
 });
 
+const decryptPassword = (encryptedPassword) => {
+  const key = CryptoJS.enc.Utf8.parse(process.env.ENCRYPTION_KEY);
+  const decrypted = CryptoJS.AES.decrypt(encryptedPassword, key, {
+    mode: CryptoJS.mode.ECB,
+    padding: CryptoJS.pad.Pkcs7,
+  }).toString(CryptoJS.enc.Utf8);
+  return decrypted;
+};
+
 router.post("/login/web", async (req, res) => {
   const { username, password } = req.body;
   try {
@@ -95,10 +108,12 @@ router.post("/login/web", async (req, res) => {
         message: "Pengguna tidak ada akses",
       });
     }
+    const decryptedPassword = decryptPassword(password);
     const isPasswordValid = await bcrypt.compare(
-      password,
+      decryptedPassword,
       akunpengguna.password
     );
+
     if (!isPasswordValid) {
       return res.status(401).json({
         code: 401,
@@ -109,8 +124,10 @@ router.post("/login/web", async (req, res) => {
     const token = jwt.sign(
       { id: akunpengguna._id, role: akunpengguna.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "3600s" } // Mengatur expire token menjadi 10 detik
     );
+    const expiry = Math.floor(Date.now() / 1000) + 3600;
+
     res.status(200).json({
       code: 200,
       status: "success",
@@ -127,6 +144,7 @@ router.post("/login/web", async (req, res) => {
         }`,
       },
       token,
+      expiry,
     });
   } catch (error) {
     res.status(500).json({ code: 500, status: "error", message: error });
@@ -163,7 +181,7 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.put("/edit-pengguna", async (req, res) => {
+router.put("/edit-pengguna", protect, async (req, res) => {
   const { _id, name, username, nomor_hp, addres, role } = req.body;
   try {
     const namaPetugas = await Pengguna.findById(_id);
@@ -205,7 +223,7 @@ router.put("/edit-pengguna", async (req, res) => {
   }
 });
 
-router.put("/edit-password", async (req, res) => {
+router.put("/edit-password", protect, async (req, res) => {
   const { _id, password } = req.body;
   try {
     const updatedPasswordPetugas = await Pengguna.findByIdAndUpdate(_id, {
@@ -233,7 +251,7 @@ router.put("/edit-password", async (req, res) => {
   }
 });
 
-router.delete("/delete-pengguna/:id", async (req, res) => {
+router.delete("/delete-pengguna/:id", protect, async (req, res) => {
   const { id } = req.params;
   try {
     const deletedkabupatenKota = await Pengguna.findByIdAndDelete(id);
