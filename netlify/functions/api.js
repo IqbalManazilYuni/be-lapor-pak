@@ -2,13 +2,13 @@ import express from "express";
 import serverless from "serverless-http";
 import dotenv from "dotenv";
 import cors from "cors";
-import connectDB from "../config/db.js";
+import connectDB from "../../config/db.js";
 import path from "path";
-import userRoutes from "../routes/userRoutes.js";
-import jenispengaduanRoutes from "../routes/jenispengaduanRoutes.js";
-import kabupatenkotaRoutes from "../routes/kabupatenkotaRoutes.js";
-import pengaduanRoutes from "../routes/pengaduanRoutes.js";
-import sertifikatRoutes from "../routes/sertifikatRoutes.js";
+import userRoutes from "../../routes/userRoutes.js";
+import jenispengaduanRoutes from "../../routes/jenispengaduanRoutes.js";
+import kabupatenkotaRoutes from "../../routes/kabupatenkotaRoutes.js";
+import pengaduanRoutes from "../../routes/pengaduanRoutes.js";
+import sertifikatRoutes from "../../routes/sertifikatRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -57,6 +57,4 @@ app.get("/", (req, res) => {
 });
 
 // Export the handler for Netlify
-const handler = serverless(app);
-
-export { handler };
+export const handler = serverless(app);
