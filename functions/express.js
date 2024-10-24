@@ -24,9 +24,7 @@ app.use(express.json());
 
 // CORS Configuration
 const corsOptions = {
-  origin: (origin, callback) => {
-    callback(null, true);
-  },
+  origin: "*", // Allow all origins for testing; consider restricting this for production
 };
 app.use(cors(corsOptions));
 
