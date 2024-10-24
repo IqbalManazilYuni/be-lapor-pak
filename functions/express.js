@@ -23,10 +23,7 @@ const app = express();
 app.use(express.json());
 
 // CORS Configuration
-const corsOptions = {
-  origin: "*", // Allow all origins for testing; consider restricting this for production
-};
-app.use(cors(corsOptions));
+app.use(cors());
 
 // Serve static files
 const __dirname = path.resolve();
