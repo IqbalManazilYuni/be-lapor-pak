@@ -36,6 +36,11 @@ app.use(
 );
 
 app.use(
+  "/public/thumbnails",
+  express.static(path.join(path.resolve(), "public", "thumbnails"))
+);
+
+app.use(
   "/public/file_sertifikat",
   express.static(path.join(path.resolve(), "public", "file_sertifikat"))
 );

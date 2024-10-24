@@ -4,7 +4,7 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", protect, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const kabupatenKota = await KabupatenKota.find().sort({ createdAt: -1 });;
     return res

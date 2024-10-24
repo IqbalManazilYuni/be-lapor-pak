@@ -3,6 +3,8 @@ import multer from "multer";
 import path from "path";
 import Sertifikat from "../models/Sertifikat.js";
 import { protect } from "../middleware/authMiddleware.js";
+import sharp from "sharp";
+import poppler from "pdf-poppler";
 
 const router = express.Router();
 
@@ -30,6 +32,25 @@ const upload = multer({
     fileSize: 3 * 1024 * 1024,
   },
 });
+async function createThumbnail(pdfPath, outputPath) {
+  try {
+    const outputBase = path.basename(outputPath, ".png");
+
+    const opts = {
+      format: "png",
+      out_dir: path.dirname(outputPath),
+      out_prefix: outputBase,
+      page: 1,
+    };
+    await poppler.convert(pdfPath, opts);
+    const thumbnailFullPath = path.join(opts.out_dir, `${outputBase}-1.png`);
+    await sharp(thumbnailFullPath).resize(600, 400).toFile(outputPath);
+
+    console.log("Thumbnail berhasil dibuat:", outputPath);
+  } catch (error) {
+    console.error("Error saat membuat thumbnail:", error);
+  }
+}
 
 router.post("/", protect, upload.single("file"), async (req, res) => {
   try {
@@ -49,12 +70,22 @@ router.post("/", protect, upload.single("file"), async (req, res) => {
       });
     }
 
+    const pdfPath = req.file.path;
+    const thumbnailPath = pdfPath
+      .replace("file_sertifikat", "thumbnails")
+      .replace(".pdf", ".png");
+
+    await createThumbnail(pdfPath, thumbnailPath);
+
     const newSertifikat = new Sertifikat({
+      nama_sertifikat: `Sertifikat Pelapor Teraktif Bulan ${bulan} ${tahun}`,
       nama_pelapor: namaPelapor,
       tahun: tahun,
       bulan: bulan,
+      status_notif: "tersampaikan",
       jumlahLaporan: jumlahLaporan,
       uri_pdf: req.file ? req.file.path : null,
+      uri_thumbnail: thumbnailPath,
     });
 
     await newSertifikat.save();
@@ -73,7 +104,6 @@ router.post("/", protect, upload.single("file"), async (req, res) => {
       });
     }
 
-    // Handle other errors
     res.status(500).json({
       code: 500,
       status: "error",
@@ -92,12 +122,17 @@ router.get("/", protect, async (req, res) => {
       payload: sertifikatList
         .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         .map((sertifikat) => ({
+          _id: sertifikat._id,
           nama_pelapor: sertifikat.nama_pelapor,
+          nama_sertifikat: sertifikat.nama_sertifikat,
           tahun: sertifikat.tahun,
           bulan: sertifikat.bulan,
           jumlahLaporan: sertifikat.jumlahLaporan,
-          uri_pdf: `${req.protocol}://${req.get("host")}/${
-            sertifikat.uri_pdf
+          createdAt: sertifikat.createdAt,
+          status_notif: sertifikat.status_notif,
+          uri_pdf: `${req.protocol}://${req.get("host")}/${sertifikat.uri_pdf}`,
+          uri_thumbnail: `${req.protocol}://${req.get("host")}/${
+            sertifikat.uri_thumbnail
           }`,
         })),
     });
@@ -107,6 +142,35 @@ router.get("/", protect, async (req, res) => {
       message: "Terjadi kesalahan server",
       status: "error",
       error: error.message,
+    });
+  }
+});
+
+router.put("/", protect, async (req, res) => {
+  const { _id, status_notif } = req.body;
+  console.log(status_notif);
+
+  try {
+    const updatedsertifikat = await Sertifikat.findByIdAndUpdate(_id, {
+      status_notif,
+    });
+    if (!updatedsertifikat) {
+      return res.status(404).json({
+        code: 404,
+        status: "error",
+        message: "Sertifikat tidak ditemukan",
+      });
+    }
+    return res.status(200).json({
+      code: 200,
+      status: "success",
+      message: "Sertifikat berhasil diperbarui",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: 500,
+      status: "error",
+      message: error.message,
     });
   }
 });

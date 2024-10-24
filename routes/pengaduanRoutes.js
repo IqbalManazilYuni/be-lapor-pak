@@ -32,6 +32,8 @@ const upload = multer({
 
 // Route untuk menambahkan pengaduan
 router.post("/", protect, upload.single("photo"), async (req, res) => {
+  console.log("ayam");
+
   try {
     const {
       judul_pengaduan,
@@ -55,6 +57,8 @@ router.post("/", protect, upload.single("photo"), async (req, res) => {
     });
 
     await newPengaduan.save();
+
+    console.log(newPengaduan);
 
     res.status(201).json({
       code: 201,
@@ -106,7 +110,7 @@ router.get("/", protect, async (req, res) => {
   }
 });
 
-router.put("/petugas",protect, async (req, res) => {
+router.put("/petugas", protect, async (req, res) => {
   const { _id, status, petugas } = req.body;
   try {
     const updatedPasswordPetugas = await Pengaduan.findByIdAndUpdate(_id, {
@@ -135,7 +139,7 @@ router.put("/petugas",protect, async (req, res) => {
   }
 });
 
-router.delete("/hapus-pengaduan/:id",protect, async (req, res) => {
+router.delete("/hapus-pengaduan/:id", protect, async (req, res) => {
   const { id } = req.params;
   try {
     const deletedkabupatenKota = await Pengaduan.findByIdAndDelete(id);
@@ -160,7 +164,7 @@ router.delete("/hapus-pengaduan/:id",protect, async (req, res) => {
   }
 });
 
-router.get("/summary",protect, async (req, res) => {
+router.get("/summary", async (req, res) => {
   try {
     const pengaduanList = await Pengaduan.find();
     const summary = {};
