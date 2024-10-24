@@ -1,5 +1,5 @@
 import express from "express";
-import ServerlessHttp from "serverless-http";
+import serverless from "serverless-http";
 import dotenv from "dotenv";
 import cors from "cors";
 import connectDB from "../config/db.js";
@@ -13,16 +13,16 @@ import sertifikatRoutes from "../routes/sertifikatRoutes.js";
 // Load environment variables
 dotenv.config();
 
-// Koneksi ke database
+// Connect to database
 connectDB();
 
-// Inisialisasi express
+// Initialize Express
 const app = express();
 
-// Middleware untuk parsing JSON
+// Middleware for JSON parsing
 app.use(express.json());
 
-// Konfigurasi CORS
+// CORS Configuration
 const corsOptions = {
   origin: (origin, callback) => {
     callback(null, true);
@@ -30,9 +30,8 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Melayani file statis
+// Serve static files
 const __dirname = path.resolve();
-
 app.use(
   "/public/foto_pengaduan",
   express.static(path.join(__dirname, "public", "foto_pengaduan"))
@@ -58,14 +57,11 @@ app.use("/api/pengaduan", pengaduanRoutes);
 app.use("/api/sertifikat", sertifikatRoutes);
 
 // Test route
-app.get("/.netlify/functions/api", (req, res) => {
+app.get("/", (req, res) => {
   res.json({ message: "Hello World" });
 });
 
-// Export the handler
-const handler = ServerlessHttp(app);
+// Export the handler for Netlify
+const handler = serverless(app);
 
-module.exports.handler = async (event, context) => {
-  const result = await handler(event, context);
-  return result;
-};
+export { handler };
