@@ -124,7 +124,7 @@ router.post("/login/web", async (req, res) => {
     const token = jwt.sign(
       { id: akunpengguna._id, role: akunpengguna.role },
       process.env.JWT_SECRET,
-      { expiresIn: "3600s" }
+      { expiresIn: "1800s" }
     );
     const expiry = Math.floor(Date.now() / 1000) + 3600;
 
@@ -226,10 +226,11 @@ router.put("/edit-pengguna", protect, async (req, res) => {
 router.put("/edit-password", protect, async (req, res) => {
   const { _id, password } = req.body;
   try {
+    const salt = await bcrypt.genSalt(10);
+    const hashpassword = await bcrypt.hash(password, salt);
     const updatedPasswordPetugas = await Pengguna.findByIdAndUpdate(_id, {
-      password,
+      password: hashpassword,
     });
-
     if (!updatedPasswordPetugas) {
       return res.status(404).json({
         code: 404,
@@ -237,6 +238,8 @@ router.put("/edit-password", protect, async (req, res) => {
         message: "Pengguna Tidak Ditemukan",
       });
     }
+    console.log();
+
     return res.status(200).json({
       code: 200,
       status: "success",
