@@ -4,7 +4,7 @@ import generateToken from "../utils/generateToken.js";
 import { protect } from "../middleware/authMiddleware.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import Pengaduan from "../models/pengaduan.js";
+import Pengaduan from "../models/Pengaduan.js";
 import CryptoJS from "crypto-js";
 import dotenv from "dotenv";
 

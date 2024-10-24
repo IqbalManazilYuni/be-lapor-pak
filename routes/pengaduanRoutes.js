@@ -1,5 +1,5 @@
 import express from "express";
-import Pengaduan from "../models/pengaduan.js";
+import Pengaduan from "../models/Pengaduan.js";
 import multer from "multer";
 import path from "path";
 import moment from "moment";
