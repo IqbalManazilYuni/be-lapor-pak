@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "nodemon index.js",
+    "build": "netlify-lambda build netlify/functions"
   },
   "author": "Iqbal",
   "license": "ISC",
@@ -22,10 +23,12 @@
     "moment": "^2.30.1",
     "mongoose": "^8.7.1",
     "multer": "^1.4.5-lts.1",
+    "netlify-lambda": "^2.0.16",
     "nodemon": "^3.1.7",
     "path": "^0.12.7",
     "pdf-lib": "^1.17.1",
     "pdf-poppler": "^0.2.1",
+    "serverless-http": "^3.2.0",
     "sharp": "^0.33.5"
   }
 }
