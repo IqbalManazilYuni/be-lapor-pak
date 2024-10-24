@@ -27,7 +27,7 @@ const corsOptions = {
   },
 };
 
-app.use(cors());
+app.use(cors(corsOptions));
 
 // Melayani file statis dari folder 'public/foto_pengaduan'
 app.use(
