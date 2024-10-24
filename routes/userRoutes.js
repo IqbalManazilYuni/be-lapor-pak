@@ -124,7 +124,7 @@ router.post("/login/web", async (req, res) => {
     const token = jwt.sign(
       { id: akunpengguna._id, role: akunpengguna.role },
       process.env.JWT_SECRET,
-      { expiresIn: "3600s" } // Mengatur expire token menjadi 10 detik
+      { expiresIn: "3600s" }
     );
     const expiry = Math.floor(Date.now() / 1000) + 3600;
 
