@@ -3,8 +3,8 @@ import multer from "multer";
 import path from "path";
 import Sertifikat from "../models/Sertifikat.js";
 import { protect } from "../middleware/authMiddleware.js";
-import sharp from "sharp";
-import poppler from "pdf-poppler";
+// import sharp from "sharp";
+// import poppler from "pdf-poppler";
 
 const router = express.Router();
 
@@ -32,25 +32,25 @@ const upload = multer({
     fileSize: 3 * 1024 * 1024,
   },
 });
-async function createThumbnail(pdfPath, outputPath) {
-  try {
-    const outputBase = path.basename(outputPath, ".png");
+// async function createThumbnail(pdfPath, outputPath) {
+//   try {
+//     const outputBase = path.basename(outputPath, ".png");
 
-    const opts = {
-      format: "png",
-      out_dir: path.dirname(outputPath),
-      out_prefix: outputBase,
-      page: 1,
-    };
-    await poppler.convert(pdfPath, opts);
-    const thumbnailFullPath = path.join(opts.out_dir, `${outputBase}-1.png`);
-    await sharp(thumbnailFullPath).resize(600, 400).toFile(outputPath);
+//     const opts = {
+//       format: "png",
+//       out_dir: path.dirname(outputPath),
+//       out_prefix: outputBase,
+//       page: 1,
+//     };
+//     await poppler.convert(pdfPath, opts);
+//     const thumbnailFullPath = path.join(opts.out_dir, `${outputBase}-1.png`);
+//     await sharp(thumbnailFullPath).resize(600, 400).toFile(outputPath);
 
-    console.log("Thumbnail berhasil dibuat:", outputPath);
-  } catch (error) {
-    console.error("Error saat membuat thumbnail:", error);
-  }
-}
+//     console.log("Thumbnail berhasil dibuat:", outputPath);
+//   } catch (error) {
+//     console.error("Error saat membuat thumbnail:", error);
+//   }
+// }
 
 router.post("/", protect, upload.single("file"), async (req, res) => {
   try {
@@ -75,7 +75,7 @@ router.post("/", protect, upload.single("file"), async (req, res) => {
       .replace("file_sertifikat", "thumbnails")
       .replace(".pdf", ".png");
 
-    await createThumbnail(pdfPath, thumbnailPath);
+    // await createThumbnail(pdfPath, thumbnailPath);
 
     const newSertifikat = new Sertifikat({
       nama_sertifikat: `Sertifikat Pelapor Teraktif Bulan ${bulan} ${tahun}`,
