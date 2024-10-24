@@ -20,6 +20,13 @@ const app = express();
 // Middleware untuk parsing JSON
 app.use(express.json());
 
+// Konfigurasi CORS
+const corsOptions = {
+  origin: (origin, callback) => {
+    callback(null, true);
+  },
+};
+
 app.use(cors());
 
 // Melayani file statis dari folder 'public/foto_pengaduan'
