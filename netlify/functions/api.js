@@ -1,47 +1,54 @@
 import express from "express";
-import serverless from "serverless-http";
 import dotenv from "dotenv";
 import cors from "cors";
-import connectDB from "../../config/db.js";
+import connectDB from "./config/db.js";
 import path from "path";
-import userRoutes from "../../routes/userRoutes.js";
-import jenispengaduanRoutes from "../../routes/jenispengaduanRoutes.js";
-import kabupatenkotaRoutes from "../../routes/kabupatenkotaRoutes.js";
-import pengaduanRoutes from "../../routes/pengaduanRoutes.js";
-import sertifikatRoutes from "../../routes/sertifikatRoutes.js";
-
+import userRoutes from "./routes/userRoutes.js";
+import jenispengaduanRoutes from "./routes/jenispengaduanRoutes.js";
+import kabupatenkotaRoutes from "./routes/kabupatenkotaRoutes.js";
+import pengaduanRoutes from "./routes/pengaduanRoutes.js";
+import sertifikatRoutes from "./routes/sertifikatRoutes.js";
+import serverless from "serverless-http";
 // Load environment variables
 dotenv.config();
 
-// Connect to database
+// Koneksi ke database
 connectDB();
 
-// Initialize Express
+// Inisialisasi express
 const app = express();
 
-// Middleware for JSON parsing
+// Middleware untuk parsing JSON
 app.use(express.json());
 
-// CORS Configuration
-app.use(cors());
+// Konfigurasi CORS
+const corsOptions = {
+  origin: (origin, callback) => {
+    callback(null, true);
+  },
+};
 
-// Serve static files
-const __dirname = path.resolve();
+app.use(cors(corsOptions));
+
+// Melayani file statis dari folder 'public/foto_pengaduan'
 app.use(
   "/public/foto_pengaduan",
-  express.static(path.join(__dirname, "public", "foto_pengaduan"))
+  express.static(path.join(path.resolve(), "public", "foto_pengaduan"))
 );
+
 app.use(
   "/public/thumbnails",
-  express.static(path.join(__dirname, "public", "thumbnails"))
+  express.static(path.join(path.resolve(), "public", "thumbnails"))
 );
+
 app.use(
   "/public/file_sertifikat",
-  express.static(path.join(__dirname, "public", "file_sertifikat"))
+  express.static(path.join(path.resolve(), "public", "file_sertifikat"))
 );
+
 app.use(
   "/public/foto_profile",
-  express.static(path.join(__dirname, "public", "foto_profile"))
+  express.static(path.join(path.resolve(), "public", "foto_profile"))
 );
 
 // Routes
@@ -51,10 +58,9 @@ app.use("/api/kabupatenkota", kabupatenkotaRoutes);
 app.use("/api/pengaduan", pengaduanRoutes);
 app.use("/api/sertifikat", sertifikatRoutes);
 
-// Test route
-app.get("/", (req, res) => {
-  res.json({ message: "Hello World" });
+// Jalankan server
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
-
-// Export the handler for Netlify
 export const handler = serverless(app);
