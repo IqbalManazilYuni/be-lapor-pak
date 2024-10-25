@@ -71,8 +71,8 @@ const uploadToFirebase = async (file) => {
   const storageRef = ref(storage, `file_sertifikat/${fileName}`);
 
   const metadata = {
-    contentType: file.mimetype, // Set tipe konten
-    contentDisposition: "inline", // Agar dibuka di browser sebagai preview
+    contentType: file.mimetype,
+    contentDisposition: "inline",
   };
 
   try {
