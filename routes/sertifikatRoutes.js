@@ -66,7 +66,7 @@ const upload = multer({
 
 const uploadToFirebase = async (file) => {
   const fileName = `${Date.now()}-${file.originalname}`;
-  const storageRef = ref(storage, `pdf_pengaduan/${fileName}`);
+  const storageRef = ref(storage, `file_sertifikat/${fileName}`);
 
   try {
     await uploadBytes(storageRef, file.buffer);
