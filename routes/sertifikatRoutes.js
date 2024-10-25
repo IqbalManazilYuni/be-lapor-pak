@@ -154,10 +154,7 @@ router.get("/", protect, async (req, res) => {
           jumlahLaporan: sertifikat.jumlahLaporan,
           createdAt: sertifikat.createdAt,
           status_notif: sertifikat.status_notif,
-          uri_pdf: `${req.protocol}://${req.get("host")}/${sertifikat.uri_pdf}`,
-          uri_thumbnail: `${req.protocol}://${req.get("host")}/${
-            sertifikat.uri_thumbnail
-          }`,
+          uri_pdf: sertifikat.uri_pdf,
         })),
     });
   } catch (error) {
