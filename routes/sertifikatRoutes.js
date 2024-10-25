@@ -8,30 +8,30 @@ import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join("public", "file_sertifikat"));
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, path.join("public", "file_sertifikat"));
+//   },
+//   filename: function (req, file, cb) {
+//     cb(null, Date.now() + "-" + file.originalname);
+//   },
+// });
 
-const fileFilter = (req, file, cb) => {
-  if (file.mimetype === "application/pdf") {
-    cb(null, true);
-  } else {
-    cb(new Error("File harus berupa PDF"), false);
-  }
-};
+// const fileFilter = (req, file, cb) => {
+//   if (file.mimetype === "application/pdf") {
+//     cb(null, true);
+//   } else {
+//     cb(new Error("File harus berupa PDF"), false);
+//   }
+// };
 
-const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 3 * 1024 * 1024,
-  },
-});
+// const upload = multer({
+//   storage: storage,
+//   fileFilter: fileFilter,
+//   limits: {
+//     fileSize: 3 * 1024 * 1024,
+//   },
+// });
 // async function createThumbnail(pdfPath, outputPath) {
 //   try {
 //     const outputBase = path.basename(outputPath, ".png");
@@ -52,6 +52,31 @@ const upload = multer({
 //   }
 // }
 
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // Batas ukuran file 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === "application/pdf") {
+      cb(null, true);
+    } else {
+      cb(new Error("File harus berupa PDF"), false);
+    }
+  },
+});
+
+const uploadToFirebase = async (file) => {
+  const fileName = `${Date.now()}-${file.originalname}`;
+  const storageRef = ref(storage, `pdf_pengaduan/${fileName}`);
+
+  try {
+    await uploadBytes(storageRef, file.buffer);
+    const downloadURL = await getDownloadURL(storageRef);
+    return downloadURL;
+  } catch (error) {
+    throw new Error("Gagal mengunggah file: " + error.message);
+  }
+};
+
 router.post("/", protect, upload.single("file"), async (req, res) => {
   try {
     const { namaPelapor, tahun, bulan, jumlahLaporan } = req.body;
@@ -70,12 +95,10 @@ router.post("/", protect, upload.single("file"), async (req, res) => {
       });
     }
 
-    const pdfPath = req.file.path;
-    const thumbnailPath = pdfPath
-      .replace("file_sertifikat", "thumbnails")
-      .replace(".pdf", ".png");
-
-    // await createThumbnail(pdfPath, thumbnailPath);
+    let fotoUrl = null;
+    if (req.file) {
+      fotoUrl = await uploadToFirebase(req.file); // Upload ke Firebase dan dapatkan URL
+    }
 
     const newSertifikat = new Sertifikat({
       nama_sertifikat: `Sertifikat Pelapor Teraktif Bulan ${bulan} ${tahun}`,
@@ -84,8 +107,7 @@ router.post("/", protect, upload.single("file"), async (req, res) => {
       bulan: bulan,
       status_notif: "tersampaikan",
       jumlahLaporan: jumlahLaporan,
-      uri_pdf: req.file ? req.file.path : null,
-      uri_thumbnail: thumbnailPath,
+      uri_pdf: fotoUrl,
     });
 
     await newSertifikat.save();

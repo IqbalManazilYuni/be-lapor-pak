@@ -5,35 +5,40 @@ import path from "path";
 import moment from "moment";
 import "moment/locale/id.js";
 import { protect } from "../middleware/authMiddleware.js";
+import storage from "../config/firebase.js";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const router = express.Router();
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, path.join("public", "foto_pengaduan"));
-  },
-  filename: function (req, file, cb) {
-    cb(null, Date.now() + "-" + file.originalname);
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // Batas ukuran file 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("File harus berupa gambar"), false);
+    }
   },
 });
 
-const fileFilter = (req, file, cb) => {
-  if (file.mimetype.startsWith("image/")) {
-    cb(null, true);
-  } else {
-    cb(new Error("File harus berupa gambar"), false);
+// Fungsi untuk mengunggah file ke Firebase Storage
+const uploadToFirebase = async (file) => {
+  const fileName = `${Date.now()}-${file.originalname}`;
+  const storageRef = ref(storage, `foto_pengaduan/${fileName}`);
+
+  try {
+    // Upload file ke Firebase Storage
+    await uploadBytes(storageRef, file.buffer);
+    // Dapatkan URL publik file
+    const downloadURL = await getDownloadURL(storageRef);
+    return downloadURL;
+  } catch (error) {
+    throw new Error("Gagal mengunggah file: " + error.message);
   }
 };
 
-const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-});
-
-// Route untuk menambahkan pengaduan
 router.post("/", protect, upload.single("photo"), async (req, res) => {
-  console.log("ayam");
-
   try {
     const {
       judul_pengaduan,
@@ -45,6 +50,11 @@ router.post("/", protect, upload.single("photo"), async (req, res) => {
       jenispengaduan,
     } = req.body;
 
+    let fotoUrl = null;
+    if (req.file) {
+      fotoUrl = await uploadToFirebase(req.file); // Upload ke Firebase dan dapatkan URL
+    }
+
     const newPengaduan = new Pengaduan({
       judul: judul_pengaduan,
       deskripsi: deskripsi,
@@ -53,23 +63,22 @@ router.post("/", protect, upload.single("photo"), async (req, res) => {
       jenis_pengaduan: jenispengaduan,
       kabupatenkota: kabupatenkota,
       lokasi: lokasi,
-      uri_foto: req.file ? req.file.path : null,
+      uri_foto: fotoUrl,
     });
 
     await newPengaduan.save();
-
-    console.log(newPengaduan);
 
     res.status(201).json({
       code: 201,
       status: "success",
       message: "Pengaduan berhasil ditambahkan",
+      data: newPengaduan,
     });
   } catch (error) {
     res.status(500).json({
       code: 500,
-      message: "Terjadi kesalahan server",
       status: "error",
+      message: "Terjadi kesalahan server",
       error: error.message,
     });
   }
@@ -95,9 +104,7 @@ router.get("/", protect, async (req, res) => {
           lokasi: pengaduan.lokasi,
           status: pengaduan.status,
           petugas: pengaduan.petugas,
-          uri_foto: `${req.protocol}://${req.get("host")}/${
-            pengaduan.uri_foto
-          }`,
+          uri_foto: pengaduan.uri_foto,
         })),
     });
   } catch (error) {
