@@ -70,10 +70,15 @@ const uploadToFirebase = async (file) => {
   const fileName = `${Date.now()}-${file.originalname}`;
   const storageRef = ref(storage, `file_sertifikat/${fileName}`);
 
+  const metadata = {
+    contentType: file.mimetype, // Set tipe konten
+    contentDisposition: "inline", // Agar dibuka di browser sebagai preview
+  };
+
   try {
-    await uploadBytes(storageRef, file.buffer);
+    await uploadBytes(storageRef, file.buffer, metadata);
     const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
+    return downloadURL; // URL ini bisa digunakan untuk preview langsung di browser
   } catch (error) {
     throw new Error("Gagal mengunggah file: " + error.message);
   }

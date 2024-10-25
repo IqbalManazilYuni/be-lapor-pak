@@ -22,7 +22,6 @@ const upload = multer({
   },
 });
 
-// Fungsi untuk mengunggah file ke Firebase Storage
 const uploadToFirebase = async (file) => {
   const fileName = `${Date.now()}-${file.originalname}`;
   const storageRef = ref(storage, `foto_pengaduan/${fileName}`);
