@@ -78,7 +78,7 @@ const uploadToFirebase = async (file) => {
   try {
     await uploadBytes(storageRef, file.buffer, metadata);
     const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL; // URL ini bisa digunakan untuk preview langsung di browser
+    return downloadURL;
   } catch (error) {
     throw new Error("Gagal mengunggah file: " + error.message);
   }

@@ -26,10 +26,13 @@ const uploadToFirebase = async (file) => {
   const fileName = `${Date.now()}-${file.originalname}`;
   const storageRef = ref(storage, `foto_pengaduan/${fileName}`);
 
+  const metadata = {
+    contentType: file.mimetype,
+    contentDisposition: "inline",
+  };
+
   try {
-    // Upload file ke Firebase Storage
-    await uploadBytes(storageRef, file.buffer);
-    // Dapatkan URL publik file
+    await uploadBytes(storageRef, file.buffer, metadata);
     const downloadURL = await getDownloadURL(storageRef);
     return downloadURL;
   } catch (error) {
