@@ -5,6 +5,8 @@ import Sertifikat from "../models/Sertifikat.js";
 import { protect } from "../middleware/authMiddleware.js";
 // import sharp from "sharp";
 // import poppler from "pdf-poppler";
+import storage from "../config/firebase.js";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const router = express.Router();
 
