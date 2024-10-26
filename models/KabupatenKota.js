@@ -5,6 +5,7 @@ const kabupatenkotaSchema = new mongoose.Schema(
     kabupatenkota: {
       type: String,
       require: true,
+      unique: true,
     },
   },
   { collection: "kabupaten-kota", timestamps: true }
