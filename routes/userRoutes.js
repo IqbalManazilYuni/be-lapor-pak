@@ -7,6 +7,10 @@ import jwt from "jsonwebtoken";
 import Pengaduan from "../models/Pengaduan.js";
 import CryptoJS from "crypto-js";
 import dotenv from "dotenv";
+import storage from "../config/firebase.js";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import multer from "multer";
+import Sertifikat from "../models/Sertifikat.js";
 
 dotenv.config();
 
@@ -57,7 +61,7 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: akunpengguna._id, role: akunpengguna.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      { expiresIn: "24h" }
     );
     res.status(200).json({
       code: 200,
@@ -70,9 +74,7 @@ router.post("/login", async (req, res) => {
         nomor_hp: akunpengguna.nomor_hp,
         addres: akunpengguna.addres,
         role: akunpengguna.role,
-        uri_profle: `${req.protocol}://${req.get("host")}/${
-          akunpengguna.uri_profile
-        }`,
+        uri_profle: akunpengguna.uri_profile
       },
       token,
     });
@@ -181,10 +183,41 @@ router.post("/register", async (req, res) => {
   }
 });
 
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024 }, // Batas ukuran file 5MB
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith("image/")) {
+      cb(null, true);
+    } else {
+      cb(new Error("File harus berupa gambar"), false);
+    }
+  },
+});
+
+const uploadToFirebase = async (file) => {
+  const fileName = `${Date.now()}-${file.originalname}`;
+  const storageRef = ref(storage, `file_profile/${fileName}`);
+
+  const metadata = {
+    contentType: file.mimetype,
+    contentDisposition: "inline",
+  };
+
+  try {
+    await uploadBytes(storageRef, file.buffer, metadata);
+    const downloadURL = await getDownloadURL(storageRef);
+    return downloadURL;
+  } catch (error) {
+    throw new Error("Gagal mengunggah file: " + error.message);
+  }
+};
+
 router.put("/edit-pengguna", protect, async (req, res) => {
   const { _id, name, username, nomor_hp, addres, role } = req.body;
   try {
     const namaPetugas = await Pengguna.findById(_id);
+
     const updatedPasswordPetugas = await Pengguna.findByIdAndUpdate(_id, {
       name,
       username,
@@ -277,4 +310,57 @@ router.delete("/delete-pengguna/:id", protect, async (req, res) => {
   }
 });
 
+router.put("/edit-pengguna-mobile", protect,upload.single("photo"), async (req, res) => {
+  const { _id, name, username, nomor_hp, addres, role } = req.body;
+  try {
+    const namaPetugas = await Pengguna.findById(_id);
+
+    let uri_profile = null;
+    if (req.file) {
+      uri_profile = await uploadToFirebase(req.file);
+    }
+
+    const updatedPasswordPetugas = await Pengguna.findByIdAndUpdate(_id, {
+      name,
+      username,
+      nomor_hp,
+      addres,
+      role,
+      uri_profile,
+    });
+    if (!updatedPasswordPetugas) {
+      return res.status(404).json({
+        code: 404,
+        status: "error",
+        message: "Pengguna Tidak Ditemukan",
+      });
+    }
+    const updatePengaduanPetugas = await Pengaduan.updateMany(
+      { petugas: namaPetugas.username },
+      { $set: { petugas: username } }
+    );
+
+    const updatePengaduanPelapor = await Pengaduan.updateMany(
+      { nama_pelapor: namaPetugas.username },
+      { $set: { nama_pelapor: username } }
+    );
+
+    const updateSertifikatPelapor = await Sertifikat.updateMany(
+      { nama_pelapor: namaPetugas.name },
+      { $set: { nama_pelapor: name } }
+    );
+
+    return res.status(200).json({
+      code: 200,
+      status: "success",
+      message: "Pengguna berhasil diperbarui",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: 500,
+      status: "error",
+      message: error.message,
+    });
+  }
+});
 export default router;

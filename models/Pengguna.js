@@ -32,6 +32,7 @@ const penggunaSchema = new mongoose.Schema(
     uri_profile: {
       type: String,
       required: false,
+      default:'',
     },
     token: {
       type: String,
