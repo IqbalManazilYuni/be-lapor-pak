@@ -238,8 +238,6 @@ router.put("/edit-password", protect, async (req, res) => {
         message: "Pengguna Tidak Ditemukan",
       });
     }
-    console.log();
-
     return res.status(200).json({
       code: 200,
       status: "success",

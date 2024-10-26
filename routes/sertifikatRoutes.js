@@ -201,4 +201,29 @@ router.put("/", protect, async (req, res) => {
   }
 });
 
+router.delete("/delete-sertifikat/:id", protect, async (req, res) => {
+  const { id } = req.params;
+  try {
+    const deletedSertifikat = await Sertifikat.findByIdAndDelete(id);
+    if (!deletedSertifikat) {
+      return res.status(404).json({
+        code: 404,
+        status: "error",
+        message: "Sertifikat tidak ditemukan",
+      });
+    }
+    return res.status(200).json({
+      code: 200,
+      status: "success",
+      message: "Sertifikat berhasil Di Hapus",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: 500,
+      status: "error",
+      message: error.message,
+    });
+  }
+});
+
 export default router;
