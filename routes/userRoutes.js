@@ -61,25 +61,44 @@ router.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: akunpengguna._id, role: akunpengguna.role },
       process.env.JWT_SECRET,
-      { expiresIn: "24h" }
+      { expiresIn: "1h" }
     );
     res.status(200).json({
       code: 200,
       status: "success",
       message: "Login berhasil.",
-      pengguna: {
-        _id: akunpengguna._id,
-        username: akunpengguna.username,
-        name: akunpengguna.name,
-        nomor_hp: akunpengguna.nomor_hp,
-        addres: akunpengguna.addres,
-        role: akunpengguna.role,
-        uri_profle: akunpengguna.uri_profile
-      },
       token,
     });
   } catch (error) {
     res.status(500).json({ code: 500, status: "error", message: error });
+  }
+});
+
+router.post("/getuser-bytoken", protect, async (req, res) => {
+  const { token } = req.body;
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const pengguna = await Pengguna.findById(decoded.id);
+    res.status(200).json({
+      code: 200,
+      status: "success",
+      message: "Token berhasil didecode.",
+      data: {
+        name: pengguna.name,
+        username: pengguna.username,
+        id: pengguna.id,
+        nomor_hp: pengguna.nomor_hp,
+        "role:": pengguna.role,
+        addres: pengguna.addres,
+        uri_profle: pengguna.uri_profile,
+      },
+    });
+  } catch (error) {
+    res.status(401).json({
+      code: 401,
+      status: "error",
+      message: "Token tidak valid atau telah kedaluwarsa.",
+    });
   }
 });
 
@@ -155,9 +174,16 @@ router.post("/login/web", async (req, res) => {
 
 router.post("/register", async (req, res) => {
   const { name, username, nomor_hp, addres, password, role } = req.body;
-
   try {
     const penggunaExist = await Pengguna.findOne({ username });
+    const namaPengguna = await Pengguna.findOne({ name });
+    if (namaPengguna) {
+      return res.status(400).json({
+        code: 400,
+        status: "error",
+        message: "Nama Sudah Digunakan",
+      });
+    }
     if (penggunaExist) {
       return res.status(400).json({
         code: 400,
@@ -216,31 +242,73 @@ const uploadToFirebase = async (file) => {
 router.put("/edit-pengguna", protect, async (req, res) => {
   const { _id, name, username, nomor_hp, addres, role } = req.body;
   try {
-    const namaPetugas = await Pengguna.findById(_id);
-
-    const updatedPasswordPetugas = await Pengguna.findByIdAndUpdate(_id, {
-      name,
-      username,
-      nomor_hp,
-      addres,
-      role,
-    });
-    if (!updatedPasswordPetugas) {
+    const pengguna = await Pengguna.findById(_id);
+    if (!pengguna) {
       return res.status(404).json({
         code: 404,
         status: "error",
-        message: "Pengguna Tidak Ditemukan",
+        message: "Pengguna tidak ditemukan",
       });
     }
-    const updatePengaduanPetugas = await Pengaduan.updateMany(
-      { petugas: namaPetugas.username },
-      { $set: { petugas: username } }
+
+    if (name && pengguna.name !== name) {
+      const namaPengguna = await Pengguna.findOne({ name });
+      if (namaPengguna) {
+        return res.status(400).json({
+          code: 400,
+          status: "error",
+          message: "Nama sudah digunakan",
+        });
+      }
+    }
+
+    // Validasi apakah username baru sudah digunakan pengguna lain
+    if (username && pengguna.username !== username) {
+      const penggunaExist = await Pengguna.findOne({ username });
+      if (penggunaExist) {
+        return res.status(400).json({
+          code: 400,
+          status: "error",
+          message: "Username sudah digunakan",
+        });
+      }
+    }
+
+    const updatedPengguna = await Pengguna.findByIdAndUpdate(
+      _id,
+      { name, username, nomor_hp, addres, role },
+      { new: true }
     );
 
-    const updatePengaduanPelapor = await Pengaduan.updateMany(
-      { nama_pelapor: namaPetugas.username },
-      { $set: { nama_pelapor: username } }
-    );
+    if (!updatedPengguna) {
+      return res.status(404).json({
+        code: 404,
+        status: "error",
+        message: "Pengguna tidak ditemukan saat pembaruan",
+      });
+    }
+
+    if (username && pengguna.username !== username) {
+      console.log("log username");
+      
+      await Pengaduan.updateMany(
+        { petugas: pengguna.username },
+        { $set: { petugas: username } }
+      );
+    }
+
+    if (name && pengguna.name !== name) {
+      console.log("log name");
+
+      await Sertifikat.updateMany(
+        { nama_pelapor: pengguna.name },
+        { $set: { nama_pelapor: name } }
+      );
+      await Pengaduan.updateMany(
+        { nama_pelapor: pengguna.name },
+        { $set: { nama_pelapor: name } }
+      );
+    }
 
     return res.status(200).json({
       code: 200,
@@ -261,6 +329,53 @@ router.put("/edit-password", protect, async (req, res) => {
   try {
     const salt = await bcrypt.genSalt(10);
     const hashpassword = await bcrypt.hash(password, salt);
+    const updatedPasswordPetugas = await Pengguna.findByIdAndUpdate(_id, {
+      password: hashpassword,
+    });
+    if (!updatedPasswordPetugas) {
+      return res.status(404).json({
+        code: 404,
+        status: "error",
+        message: "Pengguna Tidak Ditemukan",
+      });
+    }
+    return res.status(200).json({
+      code: 200,
+      status: "success",
+      message: "Password Pengguna berhasil diperbarui",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      code: 500,
+      status: "error",
+      message: error.message,
+    });
+  }
+});
+
+router.put("/edit-password-mobile", protect, async (req, res) => {
+  const { _id, password, password_lama } = req.body;
+  console.log(password_lama);
+
+  try {
+    const akunpengguna = await Pengguna.findOne({ _id });
+
+    const isPasswordValid = await bcrypt.compare(
+      password_lama,
+      akunpengguna.password
+    );
+
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        code: 401,
+        status: "error",
+        message: "Password salah.",
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashpassword = await bcrypt.hash(password, salt);
+
     const updatedPasswordPetugas = await Pengguna.findByIdAndUpdate(_id, {
       password: hashpassword,
     });
@@ -310,57 +425,104 @@ router.delete("/delete-pengguna/:id", protect, async (req, res) => {
   }
 });
 
-router.put("/edit-pengguna-mobile", protect,upload.single("photo"), async (req, res) => {
-  const { _id, name, username, nomor_hp, addres, role } = req.body;
-  try {
-    const namaPetugas = await Pengguna.findById(_id);
+router.put(
+  "/edit-pengguna-mobile",
+  protect,
+  upload.single("photo"),
+  async (req, res) => {
+    const { _id, name, username, nomor_hp, addres, role } = req.body;
 
-    let uri_profile = null;
-    if (req.file) {
-      uri_profile = await uploadToFirebase(req.file);
-    }
+    try {
+      // Cari pengguna berdasarkan ID
+      const pengguna = await Pengguna.findById(_id);
+      if (!pengguna) {
+        return res.status(404).json({
+          code: 404,
+          status: "error",
+          message: "Pengguna tidak ditemukan",
+        });
+      }
 
-    const updatedPasswordPetugas = await Pengguna.findByIdAndUpdate(_id, {
-      name,
-      username,
-      nomor_hp,
-      addres,
-      role,
-      uri_profile,
-    });
-    if (!updatedPasswordPetugas) {
-      return res.status(404).json({
-        code: 404,
+      // Validasi apakah nama baru sudah digunakan pengguna lain
+      if (name && pengguna.name !== name) {
+        const namaPengguna = await Pengguna.findOne({ name });
+        if (namaPengguna) {
+          return res.status(400).json({
+            code: 400,
+            status: "error",
+            message: "Nama sudah digunakan",
+          });
+        }
+      }
+
+      // Validasi apakah username baru sudah digunakan pengguna lain
+      if (username && pengguna.username !== username) {
+        const penggunaExist = await Pengguna.findOne({ username });
+        if (penggunaExist) {
+          return res.status(400).json({
+            code: 400,
+            status: "error",
+            message: "Username sudah digunakan",
+          });
+        }
+      }
+
+      // Periksa dan upload foto jika tersedia
+      let uri_profile = pengguna.uri_profile;
+      if (req.file) {
+        uri_profile = await uploadToFirebase(req.file);
+      }
+
+      // Update data pengguna
+      const updatedPengguna = await Pengguna.findByIdAndUpdate(
+        _id,
+        { name, username, nomor_hp, addres, role, uri_profile },
+        { new: true }
+      );
+
+      if (!updatedPengguna) {
+        return res.status(404).json({
+          code: 404,
+          status: "error",
+          message: "Pengguna tidak ditemukan saat pembaruan",
+        });
+      }
+
+      // Update data di Pengaduan jika username atau name diubah
+      if (username && pengguna.username !== username) {
+        await Pengaduan.updateMany(
+          { petugas: pengguna.username },
+          { $set: { petugas: username } }
+        );
+      }
+
+      if (name && pengguna.name !== name) {
+        console.log("ayam");
+
+        await Sertifikat.updateMany(
+          { nama_pelapor: pengguna.name },
+          { $set: { nama_pelapor: name } }
+        );
+        await Pengaduan.updateMany(
+          { nama_pelapor: pengguna.name },
+          { $set: { nama_pelapor: name } }
+        );
+      }
+
+      // Response berhasil
+      return res.status(200).json({
+        code: 200,
+        status: "success",
+        message: "Pengguna berhasil diperbarui",
+      });
+    } catch (error) {
+      return res.status(500).json({
+        code: 500,
         status: "error",
-        message: "Pengguna Tidak Ditemukan",
+        message: error.message,
       });
     }
-    const updatePengaduanPetugas = await Pengaduan.updateMany(
-      { petugas: namaPetugas.username },
-      { $set: { petugas: username } }
-    );
-
-    const updatePengaduanPelapor = await Pengaduan.updateMany(
-      { nama_pelapor: namaPetugas.username },
-      { $set: { nama_pelapor: username } }
-    );
-
-    const updateSertifikatPelapor = await Sertifikat.updateMany(
-      { nama_pelapor: namaPetugas.name },
-      { $set: { nama_pelapor: name } }
-    );
-
-    return res.status(200).json({
-      code: 200,
-      status: "success",
-      message: "Pengguna berhasil diperbarui",
-    });
-  } catch (error) {
-    return res.status(500).json({
-      code: 500,
-      status: "error",
-      message: error.message,
-    });
   }
-});
+);
+
 export default router;
