@@ -251,18 +251,6 @@ router.put("/edit-pengguna", protect, async (req, res) => {
       });
     }
 
-    if (name && pengguna.name !== name) {
-      const namaPengguna = await Pengguna.findOne({ name });
-      if (namaPengguna) {
-        return res.status(400).json({
-          code: 400,
-          status: "error",
-          message: "Nama sudah digunakan",
-        });
-      }
-    }
-
-    // Validasi apakah username baru sudah digunakan pengguna lain
     if (username && pengguna.username !== username) {
       const penggunaExist = await Pengguna.findOne({ username });
       if (penggunaExist) {
@@ -443,19 +431,6 @@ router.put(
         });
       }
 
-      // Validasi apakah nama baru sudah digunakan pengguna lain
-      if (name && pengguna.name !== name) {
-        const namaPengguna = await Pengguna.findOne({ name });
-        if (namaPengguna) {
-          return res.status(400).json({
-            code: 400,
-            status: "error",
-            message: "Nama sudah digunakan",
-          });
-        }
-      }
-
-      // Validasi apakah username baru sudah digunakan pengguna lain
       if (username && pengguna.username !== username) {
         const penggunaExist = await Pengguna.findOne({ username });
         if (penggunaExist) {
@@ -467,13 +442,11 @@ router.put(
         }
       }
 
-      // Periksa dan upload foto jika tersedia
       let uri_profile = pengguna.uri_profile;
       if (req.file) {
         uri_profile = await uploadToFirebase(req.file);
       }
-
-      // Update data pengguna
+      
       const updatedPengguna = await Pengguna.findByIdAndUpdate(
         _id,
         { name, username, nomor_hp, addres, role, uri_profile },
